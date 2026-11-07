@@ -116,7 +116,7 @@ impl InertiaLayer {
             }),
         };
 
-        inertia.commit().await;
+        inertia.commit(response.status()).await;
 
         let (mut parts, body) = response.into_parts();
         let is_empty = body.size_hint().exact() == Some(0);

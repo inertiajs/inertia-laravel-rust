@@ -44,6 +44,9 @@ pub trait Session: Send + Sync + 'static {
 
     /// Get a value and remove it from the session.
     fn pull(&self, key: &str) -> impl Future<Output = Option<Value>> + Send;
+
+    /// Remove a value.
+    fn forget(&self, key: &str) -> impl Future<Output = ()> + Send;
 }
 
 /// An object-safe [`Session`], so a request can hold any session type.
@@ -51,6 +54,7 @@ pub(crate) trait DynSession: Send + Sync {
     fn get<'a>(&'a self, key: &'a str) -> BoxFuture<'a, Option<Value>>;
     fn put<'a>(&'a self, key: &'a str, value: Value) -> BoxFuture<'a, ()>;
     fn pull<'a>(&'a self, key: &'a str) -> BoxFuture<'a, Option<Value>>;
+    fn forget<'a>(&'a self, key: &'a str) -> BoxFuture<'a, ()>;
 }
 
 impl<S: Session> DynSession for S {
@@ -64,6 +68,10 @@ impl<S: Session> DynSession for S {
 
     fn pull<'a>(&'a self, key: &'a str) -> BoxFuture<'a, Option<Value>> {
         Box::pin(Session::pull(self, key))
+    }
+
+    fn forget<'a>(&'a self, key: &'a str) -> BoxFuture<'a, ()> {
+        Box::pin(Session::forget(self, key))
     }
 }
 
@@ -90,6 +98,24 @@ impl Handoff {
             errors: decode(session.pull(key::ERRORS).await),
             clear_history: decode(session.pull(key::CLEAR_HISTORY).await),
             preserve_fragment: decode(session.pull(key::PRESERVE_FRAGMENT).await),
+        }
+    }
+
+    /// Drop what earlier requests left for a page this request didn't render, since, as with
+    /// Laravel's session flash, it lasts one request. A redirect keeps the flash data for the page
+    /// it leads to. History flags wait for the next page.
+    pub(crate) async fn expire(session: &SharedSession, redirect: bool) {
+        let keys: &[&str] = if redirect {
+            &[key::ERRORS]
+        } else {
+            &[key::FLASH, key::ERRORS]
+        };
+
+        // Check first, since stores such as `tower-sessions` save a session after any removal...
+        for key in keys {
+            if session.get(key).await.is_some() {
+                session.forget(key).await;
+            }
         }
     }
 
@@ -168,5 +194,9 @@ impl Session for ArraySession {
 
     async fn pull(&self, key: &str) -> Option<Value> {
         self.values().remove(key)
+    }
+
+    async fn forget(&self, key: &str) {
+        self.values().remove(key);
     }
 }

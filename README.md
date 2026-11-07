@@ -290,7 +290,7 @@ async fn store(inertia: Inertia, Json(form): Json<NewUser>) -> HttpResponse {
 - **Validation crates.** With the `validator` or `garde` features, their errors convert into `ValidationErrors` with `.into()`.
 - **Flash data** is delivered in the page's `flash` field, not its props, so it isn't kept in the browser history.
 
-Like Laravel's session, `flash`, `with_errors`, `clear_history` and `preserve_fragment` are queued during the request, written to the session when it ends, and delivered to the next page render. That can be a render in the same request.
+Like Laravel's session, `flash`, `with_errors`, `clear_history` and `preserve_fragment` are queued during the request, written to the session when it ends, and delivered to the next page render. That can be a render in the same request. As with Laravel's session flash, flash data and errors last one more request: when the next request doesn't render a page, such as a JSON response or a download, they're dropped. A redirect keeps the flash data, but not the errors, for the page it leads to. History flags wait for the next page.
 
 Flash data queued by prop callbacks also reaches the page being rendered. Values set with `inertia::Response::flash` take precedence over the request's flash data.
 
@@ -450,8 +450,9 @@ let inertia = Inertia::with_session(config.clone(), request, session);
 //    for the framework to render as it renders any error.
 let response = page.into_http().await;
 
-// 5. Write queued flash data and errors to the session.
-inertia.commit().await;
+// 5. Write queued flash data and errors to the session, and drop what
+//    earlier requests left for a page this one didn't render.
+inertia.commit(response.status()).await;
 
 // 6. Apply the redirect rules, which may replace the response.
 let (mut parts, body) = response.into_parts();
@@ -460,7 +461,7 @@ if let Some(replacement) = inertia::protocol::after(inertia.request(), &mut part
 }
 ```
 
-Implement the `Session` trait (`get`, `put`, `pull`) for the framework's session. See [`src/axum`](src/axum) for the complete Axum adapter.
+Implement the `Session` trait (`get`, `put`, `pull`, `forget`) for the framework's session. See [`src/axum`](src/axum) for the complete Axum adapter.
 
 ## Feature flags
 

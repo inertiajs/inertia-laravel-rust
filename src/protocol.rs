@@ -102,7 +102,7 @@ fn see_other_after_mutation(request: &Request, status: &mut StatusCode) {
     }
 }
 
-fn is_redirect(status: StatusCode) -> bool {
+pub(crate) fn is_redirect(status: StatusCode) -> bool {
     matches!(status.as_u16(), 201 | 301 | 302 | 303 | 307 | 308)
 }
 

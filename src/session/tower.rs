@@ -26,4 +26,10 @@ impl Session for tower_sessions::Session {
             .ok()
             .flatten()
     }
+
+    async fn forget(&self, key: &str) {
+        if let Err(error) = self.remove_value(key).await {
+            tracing::warn!(key, %error, "failed to write to the session");
+        }
+    }
 }
