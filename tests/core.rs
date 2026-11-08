@@ -3,7 +3,7 @@
 use std::sync::Arc;
 use std::time::Duration;
 
-use http::{HeaderMap, HeaderName, Method};
+use http::{HeaderMap, HeaderName, Method, StatusCode};
 use inertia::session::ArraySession;
 use inertia::testing::AssertablePage;
 use inertia::{
@@ -219,7 +219,7 @@ fn committing_drops_unrendered_shared_props_outside_the_lock() {
         let inertia = Inertia::with_session(config(), request(Method::POST, &[]), ArraySession::new());
         inertia.share("user", flashing_prop(&inertia));
         let runtime = tokio::runtime::Builder::new_current_thread().build().unwrap();
-        runtime.block_on(inertia.commit());
+        runtime.block_on(inertia.commit(StatusCode::OK));
         sender.send(()).unwrap();
     });
 
@@ -507,7 +507,7 @@ async fn flash_data_and_errors_are_delivered_to_the_next_render() {
     post.flash("message", "Saved!")
         .with_errors(ValidationErrors::new().with("name", "Required."));
     post.clear_history();
-    post.commit().await;
+    post.commit(StatusCode::FOUND).await;
 
     let get = || {
         Inertia::with_session(
@@ -529,12 +529,38 @@ async fn flash_data_and_errors_are_delivered_to_the_next_render() {
 }
 
 #[tokio::test]
+async fn flash_data_and_errors_last_one_request_without_a_page() {
+    let session = ArraySession::new();
+    let inertia = |method| Inertia::with_session(config(), request(method, &[("x-inertia", "true")]), session.clone());
+    let save = async |status| {
+        let post = inertia(Method::POST);
+        post.flash("message", "Saved!")
+            .with_errors(ValidationErrors::new().with("name", "Required."))
+            .clear_history();
+        post.commit(status).await;
+    };
+
+    save(StatusCode::OK).await;
+    inertia(Method::GET).commit(StatusCode::OK).await;
+    let page = resolve(inertia(Method::GET).render("Users", ())).await;
+    assert!(page.flash.is_empty());
+    assert_eq!(page.props["errors"], json!({}));
+    assert!(page.clear_history);
+
+    save(StatusCode::OK).await;
+    inertia(Method::GET).commit(StatusCode::FOUND).await;
+    let page = resolve(inertia(Method::GET).render("Users", ())).await;
+    assert_eq!(page.flash["message"], "Saved!");
+    assert_eq!(page.props["errors"], json!({}));
+}
+
+#[tokio::test]
 async fn a_failed_render_leaves_flash_data_and_errors_for_the_next_one() {
     let session = ArraySession::new();
     let post = Inertia::with_session(config(), request(Method::POST, &[]), session.clone());
     post.flash("message", "Saved!")
         .with_errors(ValidationErrors::new().with("name", "Required."));
-    post.commit().await;
+    post.commit(StatusCode::FOUND).await;
 
     let get = || Inertia::with_session(config(), request(Method::GET, &[]), session.clone());
     let failing = props! { "stats" => inertia::try_lazy(async || Err::<u32, _>("the database is down")) };
@@ -553,7 +579,7 @@ async fn a_failed_render_leaves_flash_data_and_errors_for_the_next_one() {
     inertia.flash("toast", "Hi");
     let failing = props! { "stats" => inertia::try_lazy(async || Err::<u32, _>("the database is down")) };
     assert!(inertia.render("Users", failing).into_page().await.is_err());
-    inertia.commit().await;
+    inertia.commit(StatusCode::OK).await;
 
     let next = resolve(get().render("Users", ())).await;
     assert_eq!(next.flash["toast"], "Hi");
@@ -599,7 +625,7 @@ async fn flash_data_from_prop_callbacks_reaches_the_current_page() {
     assert_eq!(page.flash["before"], "Queued before rendering");
     assert_eq!(page.flash["priority"], "Response");
 
-    inertia.commit().await;
+    inertia.commit(StatusCode::OK).await;
     let next = Inertia::with_session(config(), request(Method::GET, &[]), session);
     assert!(resolve(next.render("Users", ())).await.flash.is_empty());
 }

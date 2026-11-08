@@ -450,8 +450,9 @@ let inertia = Inertia::with_session(config.clone(), request, session);
 //    for the framework to render as it renders any error.
 let response = page.into_http().await;
 
-// 5. Write queued flash data and errors to the session.
-inertia.commit().await;
+// 5. Write queued flash data and errors to the session, and drop what
+//    earlier requests left for a page this one didn't render.
+inertia.commit(response.status()).await;
 
 // 6. Apply the redirect rules, which may replace the response.
 let (mut parts, body) = response.into_parts();
@@ -460,7 +461,7 @@ if let Some(replacement) = inertia::protocol::after(inertia.request(), &mut part
 }
 ```
 
-Implement the `Session` trait (`get`, `put`, `pull`) for the framework's session. See [`src/axum`](src/axum) for the complete Axum adapter.
+Implement the `Session` trait (`get`, `put`, `pull`, `forget`) for the framework's session. See [`src/axum`](src/axum) for the complete Axum adapter.
 
 ## Feature flags
 

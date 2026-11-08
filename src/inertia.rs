@@ -3,6 +3,7 @@
 use std::fmt;
 use std::sync::{Arc, Mutex, MutexGuard, PoisonError};
 
+use http::StatusCode;
 use serde::Serialize;
 use serde_json::{Map, Value};
 
@@ -186,9 +187,13 @@ impl Inertia {
     }
 
     /// Write the queued flash data, validation errors and history flags to
-    /// the session. Adapters call this once the handler and any page render
-    /// have finished.
-    pub async fn commit(&self) {
+    /// the session, for the next page render. Adapters call this with the
+    /// response's status once the handler and any page render have finished.
+    ///
+    /// Like Laravel's session flash, what an earlier request left for a page
+    /// lasts this one request: unless this request rendered a page, it's
+    /// dropped. A redirect keeps the flash data for the page it leads to.
+    pub async fn commit(&self, status: StatusCode) {
         let Pending {
             shared,
             handoff,
@@ -198,15 +203,15 @@ impl Inertia {
         // Drop props no page rendered after the lock, since their callbacks' captures can run application code...
         drop((shared, before_render));
 
-        if handoff.is_empty() {
-            return;
-        }
-
         match self.session() {
-            Some(session) => handoff.save(session).await,
-            None => {
+            Some(session) => {
+                Handoff::expire(session, protocol::is_redirect(status)).await;
+                handoff.save(session).await;
+            }
+            None if !handoff.is_empty() => {
                 tracing::warn!("Inertia flash data, errors and history flags require a session; they were discarded")
             }
+            None => {}
         }
     }
 
