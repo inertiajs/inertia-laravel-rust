@@ -290,7 +290,7 @@ async fn store(inertia: Inertia, Json(form): Json<NewUser>) -> HttpResponse {
 - **Validation crates.** With the `validator` or `garde` features, their errors convert into `ValidationErrors` with `.into()`.
 - **Flash data** is delivered in the page's `flash` field, not its props, so it isn't kept in the browser history.
 
-Like Laravel's session, `flash`, `with_errors`, `clear_history` and `preserve_fragment` are queued during the request, written to the session when it ends, and delivered to the next page render. That can be a render in the same request. As with Laravel's session flash, flash data and errors last one more request: when the next request doesn't render a page, such as a JSON response or a download, they're dropped. A redirect keeps the flash data, but not the errors, for the page it leads to. History flags wait for the next page.
+Like Laravel's session, `flash`, `with_errors`, `clear_history` and `preserve_fragment` are queued during the request, written to the session when it ends, and delivered to the next page render. That can be a render in the same request.
 
 Flash data queued by prop callbacks also reaches the page being rendered. Values set with `inertia::Response::flash` take precedence over the request's flash data.
 
