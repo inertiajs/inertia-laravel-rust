@@ -6,7 +6,7 @@ use serde::Serialize;
 use serde_json::Value;
 
 use jiff::tz::TimeZone;
-use jiff::{Timestamp, ZonedArithmetic};
+use jiff::{Timestamp, ZonedDateTimeArithmetic};
 
 use super::{PropError, Props, ScrollMetadata};
 use crate::page::{LiveListener, LiveState};
@@ -242,7 +242,7 @@ impl Prop {
     ///
     /// let plans = inertia::once(async || ["basic", "pro"]).until(7.days());
     /// ```
-    pub fn until(mut self, ttl: impl Into<ZonedArithmetic>) -> Self {
+    pub fn until(mut self, ttl: impl Into<ZonedDateTimeArithmetic>) -> Self {
         self.once_options().ttl = Some(exact_duration(ttl));
         self
     }
@@ -294,7 +294,7 @@ impl Prop {
     ///     .live([LiveListener::new(LiveChannel::public("metrics"), ["MetricsUpdated"])])
     ///     .throttle(5.seconds());
     /// ```
-    pub fn throttle(mut self, throttle: impl Into<ZonedArithmetic>) -> Self {
+    pub fn throttle(mut self, throttle: impl Into<ZonedDateTimeArithmetic>) -> Self {
         let throttle = exact_duration(throttle);
         self.live_options().throttle = Some(u64::try_from(throttle.as_millis()).unwrap_or(u64::MAX));
         self
@@ -315,8 +315,8 @@ impl Prop {
 
 /// The exact length of a span from now, in UTC: zero when it's negative, and
 /// the longest `Duration` when it ends past the last representable time.
-fn exact_duration(span: impl Into<ZonedArithmetic>) -> Duration {
-    let now = Timestamp::now().to_zoned(TimeZone::UTC);
+fn exact_duration(span: impl Into<ZonedDateTimeArithmetic>) -> Duration {
+    let now = Timestamp::now().to_zoned_datetime(TimeZone::UTC);
     let Ok(later) = now.checked_add(span) else {
         return Duration::MAX;
     };
