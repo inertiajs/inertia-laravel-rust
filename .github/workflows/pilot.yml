@@ -2,7 +2,7 @@ name: Pilot
 
 on:
   push:
-    branches: [main]
+    branches: [0.x]
 
 permissions:
   contents: read
