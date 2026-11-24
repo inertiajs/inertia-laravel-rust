@@ -37,7 +37,7 @@ This crate implements the server side of the [Inertia v3 protocol](https://inert
 inertia-laravel-rust = { path = "../inertia-laravel-rust" }
 ```
 
-The crate's library name is `inertia`, so Rust imports use `inertia::…`. The sibling path above assumes the current [workspace layout](https://github.com/laravel/omega-workspace#setup).
+The crate's library name is `inertia`, so Rust imports use `inertia::…`. The path above assumes you cloned this repository next to your application.
 
 The default features include the Axum adapter, `tower-sessions` support and server-side rendering. For the framework-agnostic core alone, use `default-features = false`.
 
