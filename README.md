@@ -2,10 +2,6 @@
 
 Visit [inertiajs.com](https://inertiajs.com/) to learn more.
 
-## Contributing
-
-Thank you for considering contributing to Inertia! You can read the contribution guide [here](.github/CONTRIBUTING.md).
-
 ## Code of Conduct
 
 In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
