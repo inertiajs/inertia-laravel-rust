@@ -34,14 +34,14 @@ This crate implements the server side of the [Inertia v3 protocol](https://inert
 
 ```toml
 [dependencies]
-inertia-laravel-rust = { path = "../inertia-laravel-rust" }
+inertia-laravel-rust = "0.1"
 ```
 
-The crate's library name is `inertia`, so Rust imports use `inertia::…`. The path above assumes you cloned this repository next to your application.
+The crate's library name is `inertia`, so Rust imports use `inertia::…`.
 
 The default features include the Axum adapter, `tower-sessions` support and server-side rendering. For the framework-agnostic core alone, use `default-features = false`.
 
-On the client, follow the Inertia [client-side setup](https://inertiajs.com/docs/v3/installation/client-side-setup) for React, Vue or Svelte. The [demo app](../axum-inertia-app) is a complete example with React, TypeScript, Tailwind, Vite and SSR.
+On the client, follow the Inertia [client-side setup](https://inertiajs.com/docs/v3/installation/client-side-setup) for React, Vue or Svelte.
 
 ## Quick start
 
@@ -85,13 +85,13 @@ async fn main() {
 }
 ```
 
-This example assumes your frontend bundle is served at `/build/app.js`. It shows the server wiring; see the [demo app](../axum-inertia-app) for asset serving and frontend setup. `.with_secure(false)` allows session cookies on local HTTP; use secure cookies in HTTPS deployments.
+This example assumes your frontend bundle is served at `/build/app.js`. It shows the server wiring, not asset serving or frontend setup. `.with_secure(false)` allows session cookies on local HTTP; use secure cookies in HTTPS deployments.
 
-The [`Inertia`](src/inertia.rs) extractor is the handle for the current request. `render` returns an [`inertia::Response`](src/response.rs) right away, so handlers don't `.await` it. Once the handler returns, the layer resolves the props and responds with an HTML document on a first visit, or the page as JSON on an Inertia visit, much like a Laravel `Responsable`.
+The [`Inertia`](https://github.com/inertiajs/inertia-laravel-rust/blob/0.x/src/inertia.rs) extractor is the handle for the current request. `render` returns an [`inertia::Response`](https://github.com/inertiajs/inertia-laravel-rust/blob/0.x/src/response.rs) right away, so handlers don't `.await` it. Once the handler returns, the layer resolves the props and responds with an HTML document on a first visit, or the page as JSON on an Inertia visit, much like a Laravel `Responsable`.
 
 ## Responses
 
-`render` takes a component name and its props: either [`Props`](src/props/mod.rs), usually built with the `props!` macro, or any `Serialize` struct.
+`render` takes a component name and its props: either [`Props`](https://github.com/inertiajs/inertia-laravel-rust/blob/0.x/src/props/mod.rs), usually built with the `props!` macro, or any `Serialize` struct.
 
 ```rust
 #[derive(Serialize)]
@@ -325,7 +325,7 @@ The root view renders the HTML document of a first visit. It is any `Fn(&View) -
 - `data`: view data,
 - `ssr`: whether the page was server-side rendered.
 
-The [`laravel-vite-rust`](../laravel-vite-rust) crate's `Vite` renders asset tags like Laravel's `@vite`. It's a separate dependency, `laravel-vite-rust = { path = "../laravel-vite-rust" }`, used as `vite::Vite`:
+The [`laravel-vite-rust`](https://crates.io/crates/laravel-vite-rust) crate's `Vite` renders asset tags like Laravel's `@vite`. It's a separate dependency, `laravel-vite-rust = "0.1"`, used as `vite::Vite`:
 
 - **In development** the Vite dev server writes its URL to a hot file (`public/hot`), and tags point at the dev server, with `Vite::react_refresh()` providing React Fast Refresh's preamble.
 - **In production** tags come from the build manifest, and its hash makes a good asset version.
@@ -349,7 +349,7 @@ Config::new()
     ))
 ```
 
-Vite has no hot file of its own. The demo app's [`vite.config.ts`](../axum-inertia-app/vite.config.ts) adds a ten-line plugin that writes one, like `laravel-vite-plugin` does.
+Vite has no hot file of its own. A short Vite plugin can write one when the dev server starts, like `laravel-vite-plugin` does.
 
 ## Server-side rendering
 
@@ -409,9 +409,9 @@ page.reload_except(&["head"]).await.has("post");
 page.load_deferred_props().await.has("stats");
 ```
 
-A page from `from_body` can't send requests on its own. Give it a function with `reloads_with` that sends a `ReloadRequest` to your application and reads the page from the response, as `reloadable` in [`tests/axum.rs`](tests/axum.rs) does for an Axum `Router`.
+A page from `from_body` can't send requests on its own. Give it a function with `reloads_with` that sends a `ReloadRequest` to your application and reads the page from the response, as `reloadable` in [`tests/axum.rs`](https://github.com/inertiajs/inertia-laravel-rust/blob/0.x/tests/axum.rs) does for an Axum `Router`.
 
-The core can also be tested without a web framework. Build an `Inertia` handle from a `Request` and an `ArraySession`, then resolve a render with `Response::into_page`. See [`tests/core.rs`](tests/core.rs).
+The core can also be tested without a web framework. Build an `Inertia` handle from a `Request` and an `ArraySession`, then resolve a render with `Response::into_page`. See [`tests/core.rs`](https://github.com/inertiajs/inertia-laravel-rust/blob/0.x/tests/core.rs).
 
 ## Architecture and writing an adapter
 
@@ -461,7 +461,7 @@ if let Some(replacement) = inertia::protocol::after(inertia.request(), &mut part
 }
 ```
 
-Implement the `Session` trait (`get`, `put`, `pull`, `forget`) for the framework's session. See [`src/axum`](src/axum) for the complete Axum adapter.
+Implement the `Session` trait (`get`, `put`, `pull`, `forget`) for the framework's session. See [`src/axum`](https://github.com/inertiajs/inertia-laravel-rust/blob/0.x/src/axum) for the complete Axum adapter.
 
 ## Feature flags
 

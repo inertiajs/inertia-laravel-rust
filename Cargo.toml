@@ -6,7 +6,9 @@ rust-version = "1.99"
 description = "The Inertia.js server-side protocol for Rust, with a framework-agnostic core and an Axum adapter"
 license = "MIT"
 repository = "https://github.com/inertiajs/inertia-laravel-rust"
-publish = ["pilot"]
+homepage = "https://inertiajs.com"
+documentation = "https://docs.rs/inertia-laravel-rust"
+readme = "README.md"
 keywords = ["inertia", "axum", "react", "vue", "svelte"]
 categories = ["web-programming", "web-programming::http-server"]
 exclude = ["macros"]
@@ -34,7 +36,7 @@ garde = ["dep:garde"]
 futures-util = { version = "0.3", default-features = false, features = ["std"] }
 http = "1"
 indexmap = { version = "2", features = ["serde"] }
-inertia-laravel-rust-macros = { path = "macros", version = "0.1.0", registry = "pilot" }
+inertia-laravel-rust-macros = { path = "macros", version = "=0.1.0" }
 jiff = { version = "1.0.0", default-features = false, features = ["std"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = { version = "1", features = ["preserve_order"] }
